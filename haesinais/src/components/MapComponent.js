@@ -8,7 +8,7 @@ function MapComponent({ data, center, selectedRow, onCircleClick }) {
     <div className="flex-1">
       <MapContainer
         center={[center.lat, center.lng]}
-        zoom={13}
+        zoom={7}
         className="w-full h-full"
       >
         <TileLayer
@@ -17,34 +17,34 @@ function MapComponent({ data, center, selectedRow, onCircleClick }) {
         />
 
         {/* Circle 추가 */}
-        {data.map((location) => (
-          <Circle
-            key={location.id}
-            center={[location.latitude, location.longitude]}
-            radius={10} // 반경 10m
-            pathOptions={{
-              color: selectedRow === location.id ? "red" : "blue",
-              fillColor:
-                selectedRow === location.id
-                  ? "rgba(255, 0, 0, 0.5)"
-                  : "rgba(59, 130, 246, 0.5)",
-              fillOpacity: 0.5,
-            }}
-            eventHandlers={{
-              click: () => onCircleClick(location), // Circle 클릭 시 호출
-            }}
-          >
-            <Popup>
-              <strong>ID:</strong> {location.id}
-              <br />
-              <strong>Name:</strong> {location.name}
-              <br />
-              <strong>Longitude:</strong> {location.longitude}
-              <br />
-              <strong>Latitude:</strong> {location.latitude}
-            </Popup>
-          </Circle>
-        ))}
+        {data.map((location) => {
+          const isSelected = selectedRow === location.id;
+          return (
+            <Circle
+              key={location.id}
+              center={[location.latitude, location.longitude]}
+              radius={isSelected ? 15 : 10} // 선택된 원은 약간 더 크기 증가
+              pathOptions={{
+                color: isSelected ? "red" : "blue",
+                fillColor: isSelected ? "rgba(255, 0, 0, 0.5)" : "rgba(59, 130, 246, 0.5)",
+                fillOpacity: 0.5,
+              }}
+              eventHandlers={{
+                click: () => onCircleClick(location),
+              }}
+            >
+              <Popup>
+                <strong>ID:</strong> {location.id}
+                <br />
+                <strong>Name:</strong> {location.mmsi}
+                <br />
+                <strong>Longitude:</strong> {location.longitude}
+                <br />
+                <strong>Latitude:</strong> {location.latitude}
+              </Popup>
+            </Circle>
+          );
+        })}
 
         {/* 지도 중심 업데이트 */}
         <UpdateCenter center={center} />
