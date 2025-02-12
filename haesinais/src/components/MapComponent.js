@@ -1,7 +1,6 @@
 import React from "react";
-import { MapContainer, TileLayer, Circle, Popup } from "react-leaflet";
+import { MapContainer, TileLayer, Circle, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { useMap } from "react-leaflet";
 
 function MapComponent({ data, center, selectedRow, onCircleClick }) {
   return (
@@ -16,14 +15,14 @@ function MapComponent({ data, center, selectedRow, onCircleClick }) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
 
-        {/* Circle 추가 */}
+        {/* 원 추가 (AIS 데이터) */}
         {data.map((location) => {
           const isSelected = selectedRow === location.id;
           return (
             <Circle
               key={location.id}
               center={[location.latitude, location.longitude]}
-              radius={isSelected ? 15 : 10} // 선택된 원은 약간 더 크기 증가
+              radius={isSelected ? 100 : 10} // 선택된 원 확대
               pathOptions={{
                 color: isSelected ? "red" : "blue",
                 fillColor: isSelected ? "rgba(255, 0, 0, 0.5)" : "rgba(59, 130, 246, 0.5)",
@@ -36,7 +35,7 @@ function MapComponent({ data, center, selectedRow, onCircleClick }) {
               <Popup>
                 <strong>ID:</strong> {location.id}
                 <br />
-                <strong>Name:</strong> {location.mmsi}
+                <strong>MMSI:</strong> {location.mmsi}
                 <br />
                 <strong>Longitude:</strong> {location.longitude}
                 <br />
@@ -46,18 +45,19 @@ function MapComponent({ data, center, selectedRow, onCircleClick }) {
           );
         })}
 
-        {/* 지도 중심 업데이트 */}
+        {/* 지도 중심 & 줌 조정 */}
         <UpdateCenter center={center} />
       </MapContainer>
     </div>
   );
 }
 
+// 지도 중심 & 줌 동적 업데이트
 function UpdateCenter({ center }) {
   const map = useMap();
 
   React.useEffect(() => {
-    map.setView([center.lat, center.lng], map.getZoom());
+    map.setView([center.lat, center.lng], 13); // 지도 중심 이동 & 줌 10 레벨
   }, [center, map]);
 
   return null;
