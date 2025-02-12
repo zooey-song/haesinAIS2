@@ -10,6 +10,7 @@ function Home() {
   const [selectedRow, setSelectedRow] = useState(null); // 선택된 행 ID
   const [loading, setLoading] = useState(true); // 로딩 상태
 
+  // ✅ 데이터를 가져오는 함수
   const fetchData = useCallback(async () => {
     const SERVER_IP = process.env.REACT_APP_SERVER_IP;
     console.log("서버 IP:", SERVER_IP);
@@ -70,7 +71,8 @@ function Home() {
           latitude: item.latitude ?? 0,
           longitude: item.longitude ?? 0,
         }));
-        console.log('페이징전',formattedData);
+
+      console.log("페이징 전", formattedData);
       setAISData(formattedData);
     } catch (error) {
       console.error("GET 요청 실패:", error.message);
@@ -79,51 +81,52 @@ function Home() {
         console.error("서버 응답 상태 코드:", error.response.status);
       }
       setAISData([]);
-      console.log('AIS ',AISData);
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // ✅ 컴포넌트 마운트 시 데이터 가져오기 + 1분마다 자동 갱신
   useEffect(() => {
-    fetchData();
+    fetchData(); // 최초 실행
+
+    const interval = setInterval(() => {
+      console.log("1분마다 데이터 갱신 중...");
+      fetchData(); // 1분마다 실행
+    }, 60000); // 60000ms = 60초
+
+    return () => clearInterval(interval); // 컴포넌트 언마운트 시 정리
   }, [fetchData]);
 
   return (
-    <div className="w-screen h-screen flex">
-      {loading ? (
-        <div className="w-full flex justify-center items-center text-lg font-semibold">
-          데이터 로딩 중...
-        </div>
-      ) : (
-        <>
-          {/* Graph 컴포넌트 */}
-          <Graph className="w-1/3" />
+    <div className="w-screen h-screen flex m-5">
+      <>
+        {/* Graph 컴포넌트 */}
+        <Graph className="w-1/3" />
 
-          {/* Map 컴포넌트 */}
-          <MapComponent
-            className="w-1/3"
-            data={AISData} // API 데이터 전달
-            center={center}
-            selectedRow={selectedRow}
-            onCircleClick={(location) => {
-              setCenter({ lat: location.latitude, lng: location.longitude }); // 중심 이동
-              setSelectedRow(location.id); // 선택된 행 업데이트
-            }}
-          />
+        {/* Map 컴포넌트 */}
+        <MapComponent
+          className="w-1/3"
+          data={AISData} // API 데이터 전달
+          center={center}
+          selectedRow={selectedRow}
+          onCircleClick={(location) => {
+            setCenter({ lat: location.latitude, lng: location.longitude }); // 중심 이동
+            setSelectedRow(location.id); // 선택된 행 업데이트
+          }}
+        />
 
-          {/* Table 컴포넌트 */}
-          <TableComponent
-            className="w-1/3"
-            data={AISData} // API 데이터 전달
-            selectedRow={selectedRow}
-            onRowClick={(location) => {
-              setCenter({ lat: location.latitude, lng: location.longitude }); // 중심 이동
-              setSelectedRow(location.id); // 선택된 행 업데이트
-            }}
-          />
-        </>
-      )}
+        {/* Table 컴포넌트 */}
+        <TableComponent
+          className="w-1/3"
+          data={AISData} // API 데이터 전달
+          selectedRow={selectedRow}
+          onRowClick={(location) => {
+            setCenter({ lat: location.latitude, lng: location.longitude }); // 중심 이동
+            setSelectedRow(location.id); // 선택된 행 업데이트
+          }}
+        />
+      </>
     </div>
   );
 }
