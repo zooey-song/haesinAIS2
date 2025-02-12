@@ -132,13 +132,13 @@ function Graph() {
         <>
           {/* ✅ 세로 막대 그래프 */}
           <div className="w-full">
-            <h2 className="text-xl font-bold mb-4">선박 AIS 비탐지 수</h2>
+            <h2 className="text-xl font-bold mb-4">해당 선박 AIS 비탐지 빈도수</h2>
             {barChartData ? <Bar data={barChartData} options={options} /> : <p>데이터 없음</p>}
           </div>
 
           {/* ✅ 원형 그래프 */}
           <div className="w-full">
-            <h2 className="text-xl font-bold mb-4">전체 AIS 중 비탐지되는 수</h2>
+            <h2 className="text-xl font-bold mb-4">전체 AIS 중 비탐지되는 빈도수</h2>
             {pieChartData ? <Doughnut data={pieChartData} /> : <p>데이터 없음</p>}
           </div>
         </>
