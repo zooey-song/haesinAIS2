@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import PaginationComponent from "./PaginationComponent"; // 페이징 컴포넌트 추가
 
 function TableComponent({ className, data, selectedRow, onRowClick }) {
@@ -18,6 +18,12 @@ function TableComponent({ className, data, selectedRow, onRowClick }) {
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
+
+  useEffect(() => {
+    if (currentData.length > 0 && !selectedRow) {
+      onRowClick(currentData[0]);
+    }
+  }, [currentData, selectedRow, onRowClick]);
 
   const handlePageChange = (direction) => {
     if (direction === "prev" && currentPage > 1) {
