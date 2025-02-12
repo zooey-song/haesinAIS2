@@ -40,6 +40,8 @@ function Home() {
       const formattedData = responseData
         .filter((item) => item !== null && item !== undefined)
         .map((item) => ({
+          id: item.id ?? 0,
+          lost: item.lost ?? 0,
           msg_type: item.msg_type ?? 0,
           mmsi: item.mmsi ?? 0,
           status: item.status ?? 0,
@@ -68,7 +70,7 @@ function Home() {
           latitude: item.latitude ?? 0,
           longitude: item.longitude ?? 0,
         }));
-
+        console.log('페이징전',formattedData);
       setAISData(formattedData);
     } catch (error) {
       console.error("GET 요청 실패:", error.message);

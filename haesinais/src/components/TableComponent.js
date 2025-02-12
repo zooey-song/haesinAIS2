@@ -2,11 +2,10 @@ import React, { useState } from "react";
 import PaginationComponent from "./PaginationComponent"; // 페이징 컴포넌트 추가
 
 function TableComponent({ className, data, selectedRow, onRowClick }) {
-  const [currentPage, setCurrentPage] = useState(1); // 현재 페이지
-  const [searchTerm, setSearchTerm] = useState(""); // 검색어 상태
-  const rowsPerPage = 10; // 한 페이지에 표시할 행 수
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const rowsPerPage = 10;
 
-  // 검색 필터 적용 (빈 검색어일 경우 전체 데이터 표시)
   const filteredData =
     searchTerm.trim() === ""
       ? data
@@ -14,16 +13,12 @@ function TableComponent({ className, data, selectedRow, onRowClick }) {
           location.mmsi.toString().includes(searchTerm)
         );
 
-  // 페이지 수 계산
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
-
-  // 현재 페이지의 데이터 가져오기
   const currentData = filteredData.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
 
-  // 페이지 변경 함수
   const handlePageChange = (direction) => {
     if (direction === "prev" && currentPage > 1) {
       setCurrentPage(currentPage - 1);
@@ -57,7 +52,7 @@ function TableComponent({ className, data, selectedRow, onRowClick }) {
               className={`cursor-pointer ${
                 selectedRow === location.id ? "bg-gray-200" : "bg-white"
               } hover:bg-gray-100`}
-              onClick={() => onRowClick(location)}
+              onClick={() => onRowClick(location)} // 클릭 시 지도 업데이트
             >
               <td className="border border-gray-300 px-2 py-1 text-center">
                 {location.id}
@@ -74,7 +69,6 @@ function TableComponent({ className, data, selectedRow, onRowClick }) {
         </tbody>
       </table>
 
-      {/* 페이징 컴포넌트 사용 */}
       <PaginationComponent
         currentPage={currentPage}
         totalPages={totalPages}
