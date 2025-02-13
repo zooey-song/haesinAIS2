@@ -49,7 +49,7 @@ function Graph() {
           labels: labels1,
           datasets: [
             {
-              label: "비탐지된 선박 수",
+              label: "미수신 시간 별 선박 수",
               data: values1,
               backgroundColor: "rgba(59, 130, 246, 0.5)",
               borderColor: "#3b82f6",
@@ -85,12 +85,12 @@ function Graph() {
       ) : (
         <>
           <div className="w-full">
-            <h2 className="text-xl font-bold mb-4">AIS 비탐지 빈도수</h2>
+            <h2 className="text-xl font-bold mb-4">미수신 시간 별 빈도 수</h2>
             {barChartData ? <Bar data={barChartData} /> : <p>데이터 없음</p>}
           </div>
 
           <div className="w-full">
-            <h2 className="text-xl font-bold mb-4">AIS 비탐지 비율</h2>
+            <h2 className="text-xl font-bold mb-4">미수신 시간 별 선박 수</h2>
             {pieChartData ? <Doughnut data={pieChartData} /> : <p>데이터 없음</p>}
           </div>
         </>
