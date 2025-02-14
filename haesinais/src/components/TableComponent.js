@@ -12,7 +12,7 @@ function RecenterMap({ lat, lng }) {
   return null;
 }
 
-function TableComponent({ className, data, selectedRow, onRowClick }) {
+function TableComponent({ className, data, selectedMmsi, onRowClick }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const rowsPerPage = 10;
@@ -21,11 +21,13 @@ function TableComponent({ className, data, selectedRow, onRowClick }) {
   const [predictedLocation, setPredictedLocation] = useState(null);
 
   // 검색어에 따라 데이터 필터링
+  const trimmedSearchTerm = searchTerm.trim();
+
   const filteredData =
-    searchTerm.trim() === ""
+    trimmedSearchTerm === ""
       ? data
       : data.filter((location) =>
-          location.mmsi.toString().includes(searchTerm)
+          location.mmsi.toString().includes(trimmedSearchTerm)
         );
 
   const totalPages = Math.ceil(filteredData.length / rowsPerPage);
@@ -36,10 +38,10 @@ function TableComponent({ className, data, selectedRow, onRowClick }) {
 
   // 초기 로드 시 또는 페이지 변경 시 첫번째 row 선택
   useEffect(() => {
-    if (currentData.length > 0 && !selectedRow) {
+    if (currentData.length > 0 && !selectedLocation) {
       handleRowClick(currentData[0]);
     }
-  }, [currentData, selectedRow]);
+  }, [currentData, selectedLocation]);
 
   const handlePageChange = (direction) => {
     if (direction === "prev" && currentPage > 1) {
@@ -54,6 +56,7 @@ function TableComponent({ className, data, selectedRow, onRowClick }) {
     setMapCenter([location.latitude, location.longitude]);
     setSelectedLocation(location);
     setPredictedLocation(null); // 새로운 row 선택 시 예측값 초기화
+    // mmsi 값을 부모 컴포넌트로 전달
     onRowClick(location);
 
     // 선택된 row의 MMSI로 예측 API 요청
@@ -80,7 +83,7 @@ function TableComponent({ className, data, selectedRow, onRowClick }) {
       />
 
       {/* 테이블 영역 */}
-      <h2 className="text-lg font-bold mb-2">테이블</h2>
+      <h2 className="text-lg font-bold mb-2">소실 선박 정보</h2>
       <table className="w-full border-collapse border border-gray-200 text-sm">
         <thead>
           <tr className="bg-gray-100">
@@ -94,7 +97,7 @@ function TableComponent({ className, data, selectedRow, onRowClick }) {
             <tr
               key={location.id}
               className={`cursor-pointer ${
-                selectedRow === location.id ? "bg-gray-200" : "bg-white"
+                selectedMmsi === location.mmsi ? "bg-gray-200" : "bg-white"
               } hover:bg-gray-100`}
               onClick={() => handleRowClick(location)}
             >

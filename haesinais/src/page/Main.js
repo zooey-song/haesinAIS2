@@ -5,97 +5,71 @@ import TableComponent from "../components/TableComponent";
 import Graph from "../components/Graph";
 
 function Home() {
-  const [AISData, setAISData] = useState([]); // AIS 데이터 상태
-  const [center, setCenter] = useState({ lat: 37.566, lng: 126.978 }); // 지도 중심
-  const [selectedRow, setSelectedRow] = useState(null); // 선택된 행 ID
-  const [loading, setLoading] = useState(true); // 로딩 상태
+  const [mapData, setMapData] = useState([]); // 모든 선박 데이터
+  const [tableData, setTableData] = useState([]); // 조건에 맞는 선박 데이터
+  const [center, setCenter] = useState({ lat: 37.566, lng: 126.978 });
+  const [selectedMmsi, setSelectedMmsi] = useState(null); // 선택된 선박의 mmsi
+  const [loading, setLoading] = useState(true);
 
-  // ✅ 데이터를 가져오는 함수
+  // 데이터 포맷 및 API 호출 로직은 이전 예제와 동일합니다.
+  const extractResponseData = (data) => {
+    let responseData = [];
+    if (Array.isArray(data)) {
+      responseData = data;
+    } else if (Array.isArray(data?.response)) {
+      responseData = data.response;
+    } else if (Array.isArray(data?.vessels)) {
+      responseData = data.vessels;
+    } else {
+      console.error("예상하지 못한 데이터 형식:", data);
+    }
+    if (!Array.isArray(responseData)) {
+      responseData = [];
+    }
+    return responseData;
+  };
+
   const fetchData = useCallback(async () => {
     const SERVER_IP = process.env.REACT_APP_SERVER_IP;
-    console.log("서버 IP:", SERVER_IP);
-
     try {
-      const response = await axios.get(`${SERVER_IP}/api/vessels/all`);
-      console.log("API 응답 데이터:", response.data);
+      const [allResponse, shipsAboveResponse] = await Promise.all([
+        axios.get(`${SERVER_IP}/api/vessels/all`),
+        axios.get(`${SERVER_IP}/api/vessels/ships-above-60`)
+      ]);
 
-      let responseData = [];
+      const allData = extractResponseData(allResponse.data);
+      const shipsAboveData = extractResponseData(shipsAboveResponse.data);
 
-      if (Array.isArray(response.data)) {
-        responseData = response.data;
-      } else if (Array.isArray(response.data?.response)) {
-        responseData = response.data.response;
-      } else if (Array.isArray(response.data?.vessels)) {
-        responseData = response.data.vessels;
-      } else {
-        console.error("예상하지 못한 데이터 형식:", response.data);
-      }
+      const formatData = (dataArray) => {
+        return dataArray
+          .filter((item) => item != null)
+          .map((item) => ({
+            id: item.id ?? 0,
+            mmsi: item.mmsi ?? 0,
+            latitude: item.latitude ?? item.lat ?? 0,
+            longitude: item.longitude ?? item.lon ?? 0,
+            // 그 외 필요한 필드들을 추가합니다.
+          }));
+      };
 
-      if (!Array.isArray(responseData)) {
-        console.error("responseData가 배열이 아닙니다:", responseData);
-        responseData = [];
-      }
-
-      console.log("최종 responseData:", responseData);
-
-      const formattedData = responseData
-        .filter((item) => item !== null && item !== undefined)
-        .map((item) => ({
-          id: item.id ?? 0,
-          lost: item.lost ?? 0,
-          msg_type: item.msg_type ?? 0,
-          mmsi: item.mmsi ?? 0,
-          status: item.status ?? 0,
-          turn: item.turn ?? 0,
-          speed: item.speed ?? 0,
-          accuracy: item.accuracy ?? 0,
-          lon: item.lon ?? 0,
-          lat: item.lat ?? 0,
-          course: item.course ?? 0,
-          heading: item.heading ?? 0,
-          timestamp: item.timestamp ?? 0,
-          datetime: item.datetime ?? 0,
-          mmaf_code: item.mmaf_code ?? 0,
-          mmaf_name: item.mmaf_name ?? "",
-          mmsi_code: item.mmsi_code ?? 0,
-          mmsi_name: item.mmsi_name ?? "",
-          wind_direct: item.wind_direct ?? 0,
-          wind_speed: item.wind_speed ?? 0,
-          surface_cur_drc: item.surface_cur_drc ?? 0,
-          surface_cur_speed: item.surface_cur_speed ?? 0,
-          air_temperature: item.air_temperature ?? 0,
-          humidity: item.humidity ?? 0,
-          air_pressure: item.air_pressure ?? 0,
-          water_temperature: item.water_temperature ?? 0,
-          salinity: item.salinity ?? 0,
-          latitude: item.latitude ?? 0,
-          longitude: item.longitude ?? 0,
-        }));
-
-      console.log("페이징 전", formattedData);
-      setAISData(formattedData);
+      setMapData(formatData(allData));
+      setTableData(formatData(shipsAboveData));
     } catch (error) {
       console.error("GET 요청 실패:", error.message);
-      if (error.response) {
-        console.error("서버 응답 데이터:", error.response.data);
-        console.error("서버 응답 상태 코드:", error.response.status);
-      }
-      setAISData([]);
+      setMapData([]);
+      setTableData([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // ✅ 컴포넌트 마운트 시 데이터 가져오기 + 1분마다 자동 갱신
   useEffect(() => {
-    fetchData(); // 최초 실행
-
+    fetchData();
     const interval = setInterval(() => {
       console.log("1분마다 데이터 갱신 중...");
-      fetchData(); // 1분마다 실행
-    }, 60000); // 60000ms = 60초
-
-    return () => clearInterval(interval); // 컴포넌트 언마운트 시 정리
+      fetchData();
+    }, 60000);
+    return () => clearInterval(interval);
   }, [fetchData]);
 
   return (
@@ -104,26 +78,26 @@ function Home() {
         {/* Graph 컴포넌트 */}
         <Graph className="w-1/3" />
 
-        {/* Map 컴포넌트 */}
+        {/* Map 컴포넌트: 모든 선박 데이터를 사용 */}
         <MapComponent
           className="w-1/3"
-          data={AISData} // API 데이터 전달
+          data={mapData}
           center={center}
-          selectedRow={selectedRow}
+          selectedMmsi={selectedMmsi}
           onCircleClick={(location) => {
-            setCenter({ lat: location.latitude, lng: location.longitude }); // 중심 이동
-            setSelectedRow(location.id); // 선택된 행 업데이트
+            setCenter({ lat: location.latitude, lng: location.longitude });
+            setSelectedMmsi(location.mmsi);
           }}
         />
 
-        {/* Table 컴포넌트 */}
+        {/* Table 컴포넌트: 조건에 맞는 선박 데이터 사용 */}
         <TableComponent
           className="w-1/3"
-          data={AISData} // API 데이터 전달
-          selectedRow={selectedRow}
+          data={tableData}
+          selectedMmsi={selectedMmsi}
           onRowClick={(location) => {
-            setCenter({ lat: location.latitude, lng: location.longitude }); // 중심 이동
-            setSelectedRow(location.id); // 선택된 행 업데이트
+            setCenter({ lat: location.latitude, lng: location.longitude });
+            setSelectedMmsi(location.mmsi);
           }}
         />
       </>
