@@ -1,11 +1,26 @@
 import React, { useState, useEffect } from "react";
-import PaginationComponent from "./PaginationComponent"; // 페이징 컴포넌트 추가
+import { MapContainer, TileLayer, Circle, Polyline, useMap } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import PaginationComponent from "./PaginationComponent"; // 페이징 컴포넌트
+
+// 지도 재중심화 컴포넌트
+function RecenterMap({ lat, lng }) {
+  const map = useMap();
+  useEffect(() => {
+    map.setView([lat, lng]);
+  }, [lat, lng, map]);
+  return null;
+}
 
 function TableComponent({ className, data, selectedRow, onRowClick }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const rowsPerPage = 10;
+  const [mapCenter, setMapCenter] = useState([37.566, 126.978]); // 기본 서울 좌표
+  const [selectedLocation, setSelectedLocation] = useState(null);
+  const [predictedLocation, setPredictedLocation] = useState(null);
 
+  // 검색어에 따라 데이터 필터링
   const filteredData =
     searchTerm.trim() === ""
       ? data
@@ -19,11 +34,12 @@ function TableComponent({ className, data, selectedRow, onRowClick }) {
     currentPage * rowsPerPage
   );
 
+  // 초기 로드 시 또는 페이지 변경 시 첫번째 row 선택
   useEffect(() => {
     if (currentData.length > 0 && !selectedRow) {
-      onRowClick(currentData[0]);
+      handleRowClick(currentData[0]);
     }
-  }, [currentData, selectedRow, onRowClick]);
+  }, [currentData, selectedRow]);
 
   const handlePageChange = (direction) => {
     if (direction === "prev" && currentPage > 1) {
@@ -33,8 +49,28 @@ function TableComponent({ className, data, selectedRow, onRowClick }) {
     }
   };
 
+  const handleRowClick = (location) => {
+    // 테이블 클릭 시 지도 중심 좌표 업데이트
+    setMapCenter([location.latitude, location.longitude]);
+    setSelectedLocation(location);
+    setPredictedLocation(null); // 새로운 row 선택 시 예측값 초기화
+    onRowClick(location);
+
+    // 선택된 row의 MMSI로 예측 API 요청
+    fetch(`/api/predict?mmsi=${location.mmsi}`)
+      .then((response) => response.json())
+      .then((data) => {
+        // API가 { latitude, longitude } 형태의 예측 데이터를 반환한다고 가정합니다.
+        setPredictedLocation(data);
+      })
+      .catch((error) => {
+        console.error("예측 위치 가져오기 에러:", error);
+      });
+  };
+
   return (
-    <div className={`${className} w-1/3 h-full flex flex-col`}>
+    <div className={`${className} flex flex-col`}>
+      {/* 검색 인풋 */}
       <input
         type="text"
         placeholder="MMSI 검색..."
@@ -42,6 +78,8 @@ function TableComponent({ className, data, selectedRow, onRowClick }) {
         onChange={(e) => setSearchTerm(e.target.value)}
         className="mb-2 p-2 border border-gray-300 rounded w-full"
       />
+
+      {/* 테이블 영역 */}
       <h2 className="text-lg font-bold mb-2">테이블</h2>
       <table className="w-full border-collapse border border-gray-200 text-sm">
         <thead>
@@ -58,7 +96,7 @@ function TableComponent({ className, data, selectedRow, onRowClick }) {
               className={`cursor-pointer ${
                 selectedRow === location.id ? "bg-gray-200" : "bg-white"
               } hover:bg-gray-100`}
-              onClick={() => onRowClick(location)} // 클릭 시 지도 업데이트
+              onClick={() => handleRowClick(location)}
             >
               <td className="border border-gray-300 px-2 py-1 text-center">
                 {location.id}
@@ -80,6 +118,41 @@ function TableComponent({ className, data, selectedRow, onRowClick }) {
         totalPages={totalPages}
         onPageChange={handlePageChange}
       />
+
+      {/* 지도 영역 (세로 크기 확장: h-96 는 약 24rem, 필요에 따라 조정) */}
+      <div className="mt-4 w-full h-96">
+        <MapContainer center={mapCenter} zoom={10} style={{ width: "100%", height: "100%" }}>
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          {/* 지도 중심 변경용 컴포넌트 */}
+          <RecenterMap lat={mapCenter[0]} lng={mapCenter[1]} />
+          {/* 기본 위치 원 (빨간색) */}
+          {selectedLocation && (
+            <Circle
+              center={[selectedLocation.latitude, selectedLocation.longitude]}
+              radius={500}
+              pathOptions={{ color: "red" }}
+            />
+          )}
+          {/* 예측 위치 원 (파란색) */}
+          {predictedLocation && (
+            <Circle
+              center={[predictedLocation.latitude, predictedLocation.longitude]}
+              radius={500}
+              pathOptions={{ color: "blue" }}
+            />
+          )}
+          {/* 기본 위치와 예측 위치를 연결하는 선 (초록색) */}
+          {selectedLocation && predictedLocation && (
+            <Polyline
+              positions={[
+                [selectedLocation.latitude, selectedLocation.longitude],
+                [predictedLocation.latitude, predictedLocation.longitude],
+              ]}
+              pathOptions={{ color: "green" }}
+            />
+          )}
+        </MapContainer>
+      </div>
     </div>
   );
 }
