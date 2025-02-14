@@ -2,7 +2,7 @@ import React, { useRef } from "react";
 import { MapContainer, TileLayer, Circle, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
-// CircleWithPopup 컴포넌트: 각 선박 원을 렌더링하며, 클릭 시 popup을 엽니다.
+// CircleWithPopup 컴포넌트: 각 선박 원을 렌더링하며, 클릭 시 Popup을 엽니다.
 function CircleWithPopup({ location, isSelected, onCircleClick }) {
   const circleRef = useRef(null);
 
@@ -40,6 +40,14 @@ function CircleWithPopup({ location, isSelected, onCircleClick }) {
   );
 }
 
+function UpdateCenter({ center }) {
+  const map = useMap();
+  React.useEffect(() => {
+    map.setView([center.lat, center.lng], 10);
+  }, [center, map]);
+  return null;
+}
+
 function MapComponent({ data, center, selectedMmsi, onCircleClick }) {
   return (
     <div className="flex-1">
@@ -54,7 +62,6 @@ function MapComponent({ data, center, selectedMmsi, onCircleClick }) {
         />
 
         {data.map((location) => {
-          // 타입을 맞추기 위해 Number()를 사용합니다.
           const isSelected = Number(selectedMmsi) === Number(location.mmsi);
           return (
             <CircleWithPopup
@@ -70,15 +77,6 @@ function MapComponent({ data, center, selectedMmsi, onCircleClick }) {
       </MapContainer>
     </div>
   );
-}
-
-// 지도 중심 업데이트 컴포넌트
-function UpdateCenter({ center }) {
-  const map = useMap();
-  React.useEffect(() => {
-    map.setView([center.lat, center.lng],10);
-  }, [center, map]);
-  return null;
 }
 
 export default MapComponent;

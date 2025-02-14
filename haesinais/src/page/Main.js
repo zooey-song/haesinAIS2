@@ -3,7 +3,7 @@ import axios from "axios";
 import MapComponent from "../components/MapComponent";
 import TableComponent from "../components/TableComponent";
 import Graph from "../components/Graph";
-import Spinner from "../components/Spinner"; // Spinner 컴포넌트 임포트
+import Spinner from "../components/Spinner";
 
 function Home() {
   const [mapData, setMapData] = useState([]); // 모든 선박 데이터
@@ -12,7 +12,7 @@ function Home() {
   const [selectedMmsi, setSelectedMmsi] = useState(null); // 선택된 선박의 MMSI
   const [loading, setLoading] = useState(true);
 
-  // 데이터 포맷 및 API 호출 로직
+  // API 응답 데이터 포맷에 따른 데이터 추출 함수
   const extractResponseData = (data) => {
     let responseData = [];
     if (Array.isArray(data)) {
@@ -49,7 +49,6 @@ function Home() {
             mmsi: item.mmsi ?? 0,
             latitude: item.latitude ?? item.lat ?? 0,
             longitude: item.longitude ?? item.lon ?? 0,
-            // 필요에 따라 다른 필드를 추가합니다.
           }));
       };
 
@@ -73,7 +72,6 @@ function Home() {
     return () => clearInterval(interval);
   }, [fetchData]);
 
-  // 로딩 중이면 Spinner 컴포넌트를 렌더링
   if (loading) {
     return (
       <div className="w-screen h-screen flex items-center justify-center">
@@ -96,7 +94,7 @@ function Home() {
           selectedMmsi={selectedMmsi}
           onCircleClick={(location) => {
             setCenter({ lat: location.latitude, lng: location.longitude });
-            setSelectedMmsi(selectedMmsi);
+            setSelectedMmsi(location.mmsi);  // 선택된 선박의 MMSI 업데이트
           }}
         />
 
@@ -107,7 +105,7 @@ function Home() {
           selectedMmsi={selectedMmsi}
           onRowClick={(location) => {
             setCenter({ lat: location.latitude, lng: location.longitude });
-            setSelectedMmsi(selectedMmsi);
+            setSelectedMmsi(location.mmsi);  // 선택된 선박의 MMSI 업데이트
           }}
         />
       </>
