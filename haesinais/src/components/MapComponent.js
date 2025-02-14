@@ -45,7 +45,7 @@ function MapComponent({ data, center, selectedMmsi, onCircleClick }) {
     <div className="flex-1">
       <MapContainer
         center={[center.lat, center.lng]}
-        zoom={18}
+        zoom={10}
         className="w-full h-full"
       >
         <TileLayer
@@ -76,7 +76,7 @@ function MapComponent({ data, center, selectedMmsi, onCircleClick }) {
 function UpdateCenter({ center }) {
   const map = useMap();
   React.useEffect(() => {
-    map.setView([center.lat, center.lng], 6);
+    map.setView([center.lat, center.lng],10);
   }, [center, map]);
   return null;
 }
