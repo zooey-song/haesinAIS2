@@ -18,11 +18,11 @@ function TableComponent({ className, data, selectedMmsi, onRowClick }) {
   const rowsPerPage = 10;
   const [mapCenter, setMapCenter] = useState([37.566, 126.978]); // 기본 서울 좌표
   const [selectedLocation, setSelectedLocation] = useState(null);
-  const [predictedLocation, setPredictedLocation] = useState(null);
+  // predictedRoute는 API에서 반환받은 경로 좌표 배열을 저장합니다.
+  const [predictedRoute, setPredictedRoute] = useState(null);
 
   // 검색어에 따라 데이터 필터링
   const trimmedSearchTerm = searchTerm.trim();
-
   const filteredData =
     trimmedSearchTerm === ""
       ? data
@@ -36,11 +36,12 @@ function TableComponent({ className, data, selectedMmsi, onRowClick }) {
     currentPage * rowsPerPage
   );
 
-  // 초기 로드 시 또는 페이지 변경 시 첫번째 row 선택
+  // 초기 로드 또는 페이지 변경 시 첫 번째 행 선택
   useEffect(() => {
     if (currentData.length > 0 && !selectedLocation) {
       handleRowClick(currentData[0]);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentData, selectedLocation]);
 
   const handlePageChange = (direction) => {
@@ -52,19 +53,32 @@ function TableComponent({ className, data, selectedMmsi, onRowClick }) {
   };
 
   const handleRowClick = (location) => {
-    // 테이블 클릭 시 지도 중심 좌표 업데이트
+    // 테이블 클릭 시 지도 중심 업데이트, 선택된 위치 저장, 예측 경로 초기화
     setMapCenter([location.latitude, location.longitude]);
     setSelectedLocation(location);
-    setPredictedLocation(null); // 새로운 row 선택 시 예측값 초기화
-    // mmsi 값을 부모 컴포넌트로 전달
+    setPredictedRoute(null);
     onRowClick(location);
 
-    // 선택된 row의 MMSI로 예측 API 요청
-    fetch(`/api/predict?mmsi=${location.mmsi}`)
+    // 선택된 행의 MMSI 값을 파라미터로 하여 예측 API 요청
+    fetch(`${process.env.REACT_APP_SERVER_IP}/api/predict?mmsi=${location.mmsi}`)
       .then((response) => response.json())
       .then((data) => {
-        // API가 { latitude, longitude } 형태의 예측 데이터를 반환한다고 가정합니다.
-        setPredictedLocation(data);
+        // API가 아래와 같은 형식의 JSON을 반환한다고 가정합니다.
+        // {
+        //   "lat_five": 35.0993,
+        //   "lon_five": 129.09,
+        //   "lat_ten": 35.0768,
+        //   "lon_ten": 129.075,
+        //   "lat_thirty": 35.0339,
+        //   "lon_thirty": 129.055
+        // }
+        // 반환받은 좌표들을 순서대로 배열로 구성합니다.
+        const route = [
+          [data.lat_five, data.lon_five],
+          [data.lat_ten, data.lon_ten],
+          [data.lat_thirty, data.lon_thirty],
+        ];
+        setPredictedRoute(route);
       })
       .catch((error) => {
         console.error("예측 위치 가져오기 에러:", error);
@@ -73,7 +87,7 @@ function TableComponent({ className, data, selectedMmsi, onRowClick }) {
 
   return (
     <div className={`${className} flex flex-col`}>
-      {/* 검색 인풋 */}
+      {/* 검색 입력 필드 */}
       <input
         type="text"
         placeholder="MMSI 검색..."
@@ -122,13 +136,13 @@ function TableComponent({ className, data, selectedMmsi, onRowClick }) {
         onPageChange={handlePageChange}
       />
 
-      {/* 지도 영역 (세로 크기 확장: h-96 는 약 24rem, 필요에 따라 조정) */}
+      {/* 지도 영역 (세로 크기 조정 가능: h-96는 약 24rem) */}
       <div className="mt-4 w-full h-96">
-        <MapContainer center={mapCenter} zoom={10} style={{ width: "100%", height: "100%" }}>
+        <MapContainer center={mapCenter} zoom={11} style={{ width: "100%", height: "100%" }}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           {/* 지도 중심 변경용 컴포넌트 */}
           <RecenterMap lat={mapCenter[0]} lng={mapCenter[1]} />
-          {/* 기본 위치 원 (빨간색) */}
+          {/* 선택된 위치 원 (빨간색) */}
           {selectedLocation && (
             <Circle
               center={[selectedLocation.latitude, selectedLocation.longitude]}
@@ -136,20 +150,22 @@ function TableComponent({ className, data, selectedMmsi, onRowClick }) {
               pathOptions={{ color: "red" }}
             />
           )}
-          {/* 예측 위치 원 (파란색) */}
-          {predictedLocation && (
-            <Circle
-              center={[predictedLocation.latitude, predictedLocation.longitude]}
-              radius={500}
-              pathOptions={{ color: "blue" }}
-            />
-          )}
-          {/* 기본 위치와 예측 위치를 연결하는 선 (초록색) */}
-          {selectedLocation && predictedLocation && (
+          {/* 예측 경로의 각 지점에 파란색 원 표시 */}
+          {predictedRoute &&
+            predictedRoute.map((point, index) => (
+              <Circle
+                key={`predicted-${index}`}
+                center={point}
+                radius={500}
+                pathOptions={{ color: "blue" }}
+              />
+            ))}
+          {/* 선택된 위치와 예측 경로를 순서대로 연결하는 선 (초록색) */}
+          {selectedLocation && predictedRoute && (
             <Polyline
               positions={[
                 [selectedLocation.latitude, selectedLocation.longitude],
-                [predictedLocation.latitude, predictedLocation.longitude],
+                ...predictedRoute,
               ]}
               pathOptions={{ color: "green" }}
             />

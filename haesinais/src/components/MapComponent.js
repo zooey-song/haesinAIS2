@@ -1,13 +1,51 @@
-import React from "react";
+import React, { useRef } from "react";
 import { MapContainer, TileLayer, Circle, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
+
+// CircleWithPopup 컴포넌트: 각 선박 원을 렌더링하며, 클릭 시 popup을 엽니다.
+function CircleWithPopup({ location, isSelected, onCircleClick }) {
+  const circleRef = useRef(null);
+
+  return (
+    <Circle
+      ref={circleRef}
+      center={[location.latitude, location.longitude]}
+      radius={isSelected ? 100 : 10} // 선택 시 원의 크기 확대
+      pathOptions={{
+        color: isSelected ? "red" : "blue",
+        fillColor: isSelected
+          ? "rgba(255, 0, 0, 0.5)"
+          : "rgba(59, 130, 246, 0.5)",
+        fillOpacity: 0.5,
+      }}
+      eventHandlers={{
+        click: () => {
+          onCircleClick(location);
+          if (circleRef.current) {
+            circleRef.current.openPopup();
+          }
+        },
+      }}
+    >
+      <Popup>
+        <strong>ID:</strong> {location.id}
+        <br />
+        <strong>MMSI:</strong> {location.mmsi}
+        <br />
+        <strong>경도:</strong> {location.longitude}
+        <br />
+        <strong>위도:</strong> {location.latitude}
+      </Popup>
+    </Circle>
+  );
+}
 
 function MapComponent({ data, center, selectedMmsi, onCircleClick }) {
   return (
     <div className="flex-1">
       <MapContainer
         center={[center.lat, center.lng]}
-        zoom={7}
+        zoom={18}
         className="w-full h-full"
       >
         <TileLayer
@@ -15,34 +53,16 @@ function MapComponent({ data, center, selectedMmsi, onCircleClick }) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
 
-        {/* AIS 데이터에 해당하는 원을 그립니다. */}
         {data.map((location) => {
-          // 선택된 mmsi와 일치하면 isSelected가 true가 되어 빨간색으로 표시합니다.
-          const isSelected = selectedMmsi === location.mmsi;
+          // 타입을 맞추기 위해 Number()를 사용합니다.
+          const isSelected = Number(selectedMmsi) === Number(location.mmsi);
           return (
-            <Circle
-              key={location.id}
-              center={[location.latitude, location.longitude]}
-              radius={isSelected ? 100 : 10} // 선택되면 원 크기를 확대
-              pathOptions={{
-                color: isSelected ? "red" : "blue",
-                fillColor: isSelected ? "rgba(255, 0, 0, 0.5)" : "rgba(59, 130, 246, 0.5)",
-                fillOpacity: 0.5,
-              }}
-              eventHandlers={{
-                click: () => onCircleClick(location),
-              }}
-            >
-              <Popup>
-                <strong>ID:</strong> {location.id}
-                <br />
-                <strong>MMSI:</strong> {location.mmsi}
-                <br />
-                <strong>Longitude:</strong> {location.longitude}
-                <br />
-                <strong>Latitude:</strong> {location.latitude}
-              </Popup>
-            </Circle>
+            <CircleWithPopup
+              key={`${location.mmsi}-${isSelected ? "selected" : "unselected"}`}
+              location={location}
+              isSelected={isSelected}
+              onCircleClick={onCircleClick}
+            />
           );
         })}
 
@@ -56,7 +76,7 @@ function MapComponent({ data, center, selectedMmsi, onCircleClick }) {
 function UpdateCenter({ center }) {
   const map = useMap();
   React.useEffect(() => {
-    map.setView([center.lat, center.lng], 13);
+    map.setView([center.lat, center.lng], 6);
   }, [center, map]);
   return null;
 }

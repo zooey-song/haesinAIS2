@@ -7,11 +7,11 @@ import Graph from "../components/Graph";
 function Home() {
   const [mapData, setMapData] = useState([]); // 모든 선박 데이터
   const [tableData, setTableData] = useState([]); // 조건에 맞는 선박 데이터
-  const [center, setCenter] = useState({ lat: 37.566, lng: 126.978 });
-  const [selectedMmsi, setSelectedMmsi] = useState(null); // 선택된 선박의 mmsi
+  const [center, setCenter] = useState({ lat: 35.1379222, lng: 129.05562775 });
+  const [selectedMmsi, setSelectedMmsi] = useState(null); // 선택된 선박의 MMSI
   const [loading, setLoading] = useState(true);
 
-  // 데이터 포맷 및 API 호출 로직은 이전 예제와 동일합니다.
+  // 데이터 포맷 및 API 호출 로직
   const extractResponseData = (data) => {
     let responseData = [];
     if (Array.isArray(data)) {
@@ -48,7 +48,7 @@ function Home() {
             mmsi: item.mmsi ?? 0,
             latitude: item.latitude ?? item.lat ?? 0,
             longitude: item.longitude ?? item.lon ?? 0,
-            // 그 외 필요한 필드들을 추가합니다.
+            // 필요에 따라 다른 필드를 추가합니다.
           }));
       };
 
@@ -86,18 +86,18 @@ function Home() {
           selectedMmsi={selectedMmsi}
           onCircleClick={(location) => {
             setCenter({ lat: location.latitude, lng: location.longitude });
-            setSelectedMmsi(location.mmsi);
+            setSelectedMmsi(selectedMmsi);
           }}
         />
 
-        {/* Table 컴포넌트: 조건에 맞는 선박 데이터 사용 */}
+        {/* Table 컴포넌트: 조건에 맞는 선박 데이터를 사용 */}
         <TableComponent
           className="w-1/3"
           data={tableData}
           selectedMmsi={selectedMmsi}
           onRowClick={(location) => {
             setCenter({ lat: location.latitude, lng: location.longitude });
-            setSelectedMmsi(location.mmsi);
+            setSelectedMmsi(selectedMmsi);
           }}
         />
       </>
