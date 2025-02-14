@@ -1,10 +1,17 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { MapContainer, TileLayer, Circle, Popup, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 
-// CircleWithPopup 컴포넌트: 각 선박 원을 렌더링하며, 클릭 시 Popup을 엽니다.
+// CircleWithPopup 컴포넌트: 각 선박 원을 렌더링하며, 선택 시 popup을 자동으로 엽니다.
 function CircleWithPopup({ location, isSelected, onCircleClick }) {
   const circleRef = useRef(null);
+
+  // isSelected가 true로 변경되면 popup을 열도록 함
+  useEffect(() => {
+    if (isSelected && circleRef.current) {
+      circleRef.current.openPopup();
+    }
+  }, [isSelected]);
 
   return (
     <Circle
@@ -42,7 +49,7 @@ function CircleWithPopup({ location, isSelected, onCircleClick }) {
 
 function UpdateCenter({ center }) {
   const map = useMap();
-  React.useEffect(() => {
+  useEffect(() => {
     map.setView([center.lat, center.lng], 10);
   }, [center, map]);
   return null;
