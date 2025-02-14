@@ -12,7 +12,7 @@ function RecenterMap({ lat, lng }) {
   return null;
 }
 
-function TableComponent({ className, data, selectedMmsi, onRowClick }) {
+function TableComponent({ className, data, onRowClick }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const rowsPerPage = 10;
@@ -111,7 +111,9 @@ function TableComponent({ className, data, selectedMmsi, onRowClick }) {
             <tr
               key={location.id}
               className={`cursor-pointer ${
-                selectedMmsi === location.mmsi ? "bg-gray-200" : "bg-white"
+                selectedLocation && selectedLocation.mmsi === location.mmsi
+                  ? "bg-gray-200"
+                  : "bg-white"
               } hover:bg-gray-100`}
               onClick={() => handleRowClick(location)}
             >
