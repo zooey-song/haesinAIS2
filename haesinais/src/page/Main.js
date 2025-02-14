@@ -3,6 +3,7 @@ import axios from "axios";
 import MapComponent from "../components/MapComponent";
 import TableComponent from "../components/TableComponent";
 import Graph from "../components/Graph";
+import Spinner from "../components/Spinner"; // Spinner 컴포넌트 임포트
 
 function Home() {
   const [mapData, setMapData] = useState([]); // 모든 선박 데이터
@@ -71,6 +72,15 @@ function Home() {
     }, 60000);
     return () => clearInterval(interval);
   }, [fetchData]);
+
+  // 로딩 중이면 Spinner 컴포넌트를 렌더링
+  if (loading) {
+    return (
+      <div className="w-screen h-screen flex items-center justify-center">
+        <Spinner />
+      </div>
+    );
+  }
 
   return (
     <div className="w-screen h-screen flex m-5">
