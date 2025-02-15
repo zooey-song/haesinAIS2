@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MapContainer, TileLayer, Circle, Polyline, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Circle, Polyline, useMap, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import PaginationComponent from "./PaginationComponent"; // 페이징 컴포넌트
 
@@ -63,15 +63,6 @@ function TableComponent({ className, data, onRowClick }) {
     fetch(`${process.env.REACT_APP_SERVER_IP}/api/predict?mmsi=${location.mmsi}`)
       .then((response) => response.json())
       .then((data) => {
-        // API가 아래와 같은 형식의 JSON을 반환한다고 가정합니다.
-        // {
-        //   "lat_five": 35.0993,
-        //   "lon_five": 129.09,
-        //   "lat_ten": 35.0768,
-        //   "lon_ten": 129.075,
-        //   "lat_thirty": 35.0339,
-        //   "lon_thirty": 129.055
-        // }
         // 반환받은 좌표들을 순서대로 배열로 구성합니다.
         const route = [
           [data.lat_five, data.lon_five],
@@ -144,14 +135,27 @@ function TableComponent({ className, data, onRowClick }) {
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           {/* 지도 중심 변경용 컴포넌트 */}
           <RecenterMap lat={mapCenter[0]} lng={mapCenter[1]} />
-          {/* 선택된 위치 원 (빨간색) */}
+
+          {/* 선택된 위치의 원 (빨간색) */}
           {selectedLocation && (
             <Circle
               center={[selectedLocation.latitude, selectedLocation.longitude]}
               radius={500}
               pathOptions={{ color: "red" }}
-            />
+            >
+              {/* 서클을 클릭하면 팝업으로 선박 정보를 보여줌 */}
+              <Popup>
+                <div>
+                  <h3>선택된 선박 정보</h3>
+                  <p>ID: {selectedLocation.id}</p>
+                  <p>MMSI: {selectedLocation.mmsi}</p>
+                  <p>위도: {selectedLocation.latitude.toFixed(6)}</p>
+                  <p>경도: {selectedLocation.longitude.toFixed(6)}</p>
+                </div>
+              </Popup>
+            </Circle>
           )}
+
           {/* 예측 경로의 각 지점에 파란색 원 표시 */}
           {predictedRoute &&
             predictedRoute.map((point, index) => (
@@ -160,8 +164,17 @@ function TableComponent({ className, data, onRowClick }) {
                 center={point}
                 radius={500}
                 pathOptions={{ color: "blue" }}
-              />
+              >
+                <Popup>
+                  <div>
+                    <h3>예측 위치</h3>
+                    <p>위도: {point[0].toFixed(6)}</p>
+                    <p>경도: {point[1].toFixed(6)}</p>
+                  </div>
+                </Popup>
+              </Circle>
             ))}
+
           {/* 선택된 위치와 예측 경로를 순서대로 연결하는 선 (초록색) */}
           {selectedLocation && predictedRoute && (
             <Polyline
